@@ -1,5 +1,5 @@
 """
-The PiazzaLoader class is responsible for loading files from a zipped file which can be exported from Piazza.
+This file contains the PiazzaLoader class, which is responsible for loading files from Piazza
 """
 
 import os
@@ -10,6 +10,9 @@ import tqdm
 
 
 class PiazzaLoader(object):
+    """
+    The PiazzaLoader class is responsible for loading files from a zipped file which can be exported from Piazza.
+    """
 
     def __init__(self, file_path: str):
         """

@@ -1,0 +1,12 @@
+black
+langchain-core
+langchain-community
+unstructured
+pdfminer
+pdfminer.six==20221105
+pi_heif
+unstructured-inference
+tqdm
+pdf2image
+unstructured-pytesseract
+jq

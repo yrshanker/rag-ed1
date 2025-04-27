@@ -10,3 +10,5 @@ tqdm
 pdf2image
 unstructured-pytesseract
 jq
+smolagents
+langchain_openai

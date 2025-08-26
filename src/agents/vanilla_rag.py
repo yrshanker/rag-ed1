@@ -1,6 +1,8 @@
-from langchain.llms import OpenAI
+import argparse
+
 from langchain.chains import RetrievalQA
-from ..retrievers.vectorstore import VectorStoreRetriever
+from langchain.llms import OpenAI
+from src.retrievers.vectorstore import VectorStoreRetriever
 
 
 def one_step_retrieval(query: str) -> str:
@@ -25,3 +27,15 @@ def one_step_retrieval(query: str) -> str:
     )
     answer = qa.run(query)
     return answer
+
+
+def main() -> None:
+    """CLI entry point for one-step retrieval."""
+    parser = argparse.ArgumentParser(description="Run one-step retrieval")
+    parser.add_argument("query", help="Query string")
+    args = parser.parse_args()
+    print(one_step_retrieval(args.query))
+
+
+if __name__ == "__main__":
+    main()

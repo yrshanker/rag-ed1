@@ -25,7 +25,12 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["black"]
+dev = [
+    "black",
+    "ruff",
+    "mypy",
+    "pytest",
+]
 
 [project.scripts]
 vanilla-rag = "rag_ed.agents.vanilla_rag:main"

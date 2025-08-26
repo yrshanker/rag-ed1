@@ -154,7 +154,13 @@ def generate_imscc(
                 </html>
                 """
             )
-            zf.writestr(html_rel, html)
+            index_info = zipfile.ZipInfo(html_rel)
+            index_info.date_time = (2023, 1, 2, 0, 0, 0)
+            zf.writestr(index_info, html)
+            extra_rel = f"{web_folder}/extra.html"
+            extra_info = zipfile.ZipInfo(extra_rel)
+            extra_info.date_time = (2023, 1, 1, 0, 0, 0)
+            zf.writestr(extra_info, "<html>extra</html>")
         else:
             wl_xml = dedent(
                 f"""

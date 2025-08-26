@@ -2,13 +2,12 @@ black
 langchain-core
 langchain-community
 unstructured
-pdfminer
 pdfminer.six==20221105
-pi_heif
+pi-heif
 unstructured-inference
 tqdm
 pdf2image
 unstructured-pytesseract
 jq
 smolagents
-langchain_openai
+langchain-openai

@@ -6,13 +6,41 @@ import datetime
 import os
 from pathlib import Path
 
-import langchain_community.document_loaders
-import langchain_core.document_loaders
-import langchain_core.documents
+from langchain_community.document_loaders import (
+    UnstructuredCSVLoader,
+    UnstructuredExcelLoader,
+    UnstructuredHTMLLoader,
+    UnstructuredMarkdownLoader,
+    UnstructuredPDFLoader,
+    UnstructuredPowerPointLoader,
+    UnstructuredTSVLoader,
+    UnstructuredXMLLoader,
+    UnstructuredWordDocumentLoader,
+)
+from langchain_core.document_loaders import BaseLoader
+from langchain_core.documents import Document
 import tqdm
 
 
-class CanvasLoader(langchain_core.document_loaders.BaseLoader):
+IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".bmp"}
+
+FILE_LOADERS: dict[str, type[BaseLoader]] = {
+    ".html": UnstructuredHTMLLoader,
+    ".xml": UnstructuredXMLLoader,
+    ".pdf": UnstructuredPDFLoader,
+    ".md": UnstructuredMarkdownLoader,
+    ".ppt": UnstructuredPowerPointLoader,
+    ".pptx": UnstructuredPowerPointLoader,
+    ".doc": UnstructuredWordDocumentLoader,
+    ".docx": UnstructuredWordDocumentLoader,
+    ".xls": UnstructuredExcelLoader,
+    ".xlsx": UnstructuredExcelLoader,
+    ".csv": UnstructuredCSVLoader,
+    ".tsv": UnstructuredTSVLoader,
+}
+
+
+class CanvasLoader(BaseLoader):
     """
     The CanvasLoader class is responsible for loading files from a zipped .imscc file which can be exported from Canvas.
     """
@@ -31,7 +59,7 @@ class CanvasLoader(langchain_core.document_loaders.BaseLoader):
         self.zipped_file_path = str(path)
         self.course = path.stem
 
-    def load(self) -> list[langchain_core.documents.Document]:
+    def load(self) -> list[Document]:
         """Load the files from the zipped .imscc file.
 
         Returns:
@@ -62,9 +90,7 @@ class CanvasLoader(langchain_core.document_loaders.BaseLoader):
 
         return file_paths
 
-    def _load_files(
-        self, list_of_files_to_load: list[str]
-    ) -> list[langchain_core.documents.Document]:
+    def _load_files(self, list_of_files_to_load: list[str]) -> list[Document]:
         """
         Load the files from the list of files to load.
 
@@ -74,47 +100,32 @@ class CanvasLoader(langchain_core.document_loaders.BaseLoader):
         Returns:
             list[Document]: A list of loaded documents.
         """
-        loaded_documents = []
+        loaded_documents: list[Document] = []
         for file_path in tqdm.tqdm(list_of_files_to_load):
-            if os.path.isfile(file_path):
-                file_extension = os.path.splitext(file_path)[1].lower()
-                if file_extension in [".jpg", ".jpeg", ".png", ".gif", ".bmp"]:
-                    continue  # Skip image files
-                if file_extension == ".html":
-                    new_documents = (
-                        langchain_community.document_loaders.UnstructuredHTMLLoader(
-                            file_path
-                        ).load()
-                    )
-                elif file_extension == ".xml":
-                    new_documents = (
-                        langchain_community.document_loaders.UnstructuredXMLLoader(
-                            file_path
-                        ).load()
-                    )
-                elif file_extension == ".pdf":
-                    new_documents = (
-                        langchain_community.document_loaders.UnstructuredPDFLoader(
-                            file_path
-                        ).load()
-                    )
-                else:
-                    with open(file_path, "r") as file:
-                        content = file.read()
-                    new_documents = [
-                        langchain_core.documents.Document(
-                            page_content=content, metadata={"source": file_path}
-                        )
-                    ]
+            if not os.path.isfile(file_path):
+                continue
+            file_extension = os.path.splitext(file_path)[1].lower()
+            if file_extension in IMAGE_EXTENSIONS:
+                continue  # Skip image files
 
-                timestamp = datetime.datetime.fromtimestamp(
-                    os.path.getmtime(file_path)
-                ).isoformat()
-                for doc in new_documents:
-                    doc.metadata.setdefault("source", file_path)
-                    doc.metadata["course"] = self.course
-                    doc.metadata["timestamp"] = timestamp
-                loaded_documents += new_documents
+            loader_cls = FILE_LOADERS.get(file_extension)
+            if loader_cls is not None:
+                new_documents = loader_cls(file_path).load()  # type: ignore[call-arg]
+            else:
+                with open(file_path, "r", encoding="utf-8", errors="ignore") as file:
+                    content = file.read()
+                new_documents = [
+                    Document(page_content=content, metadata={"source": file_path})
+                ]
+
+            timestamp = datetime.datetime.fromtimestamp(
+                os.path.getmtime(file_path)
+            ).isoformat()
+            for doc in new_documents:
+                doc.metadata.setdefault("source", file_path)
+                doc.metadata["course"] = self.course
+                doc.metadata["timestamp"] = timestamp
+            loaded_documents += new_documents
         return loaded_documents
 
 

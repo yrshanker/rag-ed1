@@ -2,19 +2,19 @@ black
 ruff
 mypy
 pytest
-langchain - core
-langchain - community
+responses
+langchain-core
+langchain-community
 chromadb
 unstructured
-pdfminer.six == 20221105
-pi - heif
-unstructured - inference
+pdfminer.six==20221105
+pi-heif
+unstructured-inference
 tqdm
 pdf2image
-unstructured - pytesseract
+unstructured-pytesseract
 jq
 smolagents
 requests
-responses
 langchain-openai
-python-pptx==1.0.2
+types-requests

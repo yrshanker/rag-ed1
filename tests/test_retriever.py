@@ -1,6 +1,7 @@
 from pathlib import Path
 import os
 import langchain_core.documents
+from langchain_core.embeddings import Embeddings
 import pytest
 import langchain_openai.embeddings
 import rag_ed.retrievers.vectorstore
@@ -11,7 +12,7 @@ from tests.imscc_utils import generate_imscc
 from tests.piazza_utils import generate_piazza_export
 
 
-class DummyEmbeddings:
+class DummyEmbeddings(Embeddings):
     def embed_documents(self, texts: list[str]) -> list[list[float]]:
         return [[float(len(t))] for t in texts]
 
@@ -30,7 +31,7 @@ def test_vector_store_retriever(monkeypatch, tmp_path: Path) -> None:
 
         @classmethod
         def from_documents(
-            cls, docs: list, embeddings: DummyEmbeddings
+            cls, docs: list, embeddings: Embeddings
         ) -> "DummyVectorStore":
             return cls(docs)
 
@@ -53,7 +54,7 @@ def test_vector_store_retriever(monkeypatch, tmp_path: Path) -> None:
 def test_custom_embeddings_and_inmemory(monkeypatch, tmp_path: Path) -> None:
     """Ensure custom embeddings and in-memory store are used."""
 
-    class DummyEmbeddings:
+    class DummyEmbeddings(Embeddings):
         def embed_documents(self, texts: list[str]) -> list[list[float]]:  # noqa: D401
             return [[1.0] for _ in texts]
 
@@ -63,7 +64,7 @@ def test_custom_embeddings_and_inmemory(monkeypatch, tmp_path: Path) -> None:
     class DummyVectorStore:
         @classmethod
         def from_documents(
-            cls, docs: list, embeddings: DummyEmbeddings
+            cls, docs: list, embeddings: Embeddings
         ) -> "DummyVectorStore":
             assert embeddings is dummy_embeddings
             return cls()
@@ -115,9 +116,7 @@ def test_faiss_persistence(monkeypatch, tmp_path: Path) -> None:
         loaded: list[str] = []
 
         @classmethod
-        def from_documents(
-            cls, docs: list, embeddings: DummyEmbeddings
-        ) -> "DummyFAISS":
+        def from_documents(cls, docs: list, embeddings: Embeddings) -> "DummyFAISS":
             return cls()
 
         def save_local(self, directory: str) -> None:  # noqa: D401
@@ -128,7 +127,7 @@ def test_faiss_persistence(monkeypatch, tmp_path: Path) -> None:
         def load_local(
             cls,
             directory: str,
-            embeddings: DummyEmbeddings,
+            embeddings: Embeddings,
             allow_dangerous_deserialization: bool,
         ) -> "DummyFAISS":
             cls.loaded.append(directory)

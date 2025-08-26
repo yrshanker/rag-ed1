@@ -244,6 +244,7 @@ def test_chroma_persistence(monkeypatch, tmp_path: Path) -> None:
     assert DummyChroma.saved == [str(persist_dir)]
     assert DummyChroma.loaded[-1] == str(persist_dir)
 
+
 def test_vector_store_retriever_missing_files() -> None:
     with pytest.raises(
         FileNotFoundError,

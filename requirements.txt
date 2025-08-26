@@ -4,6 +4,7 @@ mypy
 pytest
 langchain-core
 langchain-community
+chromadb
 unstructured
 pdfminer.six==20221105
 pi-heif

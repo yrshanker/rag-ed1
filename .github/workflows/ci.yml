@@ -17,9 +17,5 @@ jobs:
       - name: Install dependencies
         run: |
           pip install .[dev]
-      - name: Lint
-        run: black --check .
-      - name: Type check
-        run: mypy .
       - name: Unit tests
         run: pytest

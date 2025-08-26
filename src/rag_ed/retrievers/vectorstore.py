@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import os
-from typing import Literal
+from typing import Any, Literal
 from pathlib import Path
 
 import langchain.text_splitter
@@ -54,6 +54,9 @@ class VectorStoreRetriever(langchain_core.retrievers.BaseRetriever):
     5
     """
 
+    vector_store: Any
+    k: int
+
     def __init__(
         self,
         canvas_path: str,
@@ -72,9 +75,6 @@ class VectorStoreRetriever(langchain_core.retrievers.BaseRetriever):
             in_memory (bool): If True, use in-memory vector storage. Otherwise, use FAISS.
             k (int): Default number of top documents to retrieve.
         """
-        if not os.path.exists(canvas_path):
-            msg = f"Canvas file '{canvas_path}' does not exist."
-            raise FileNotFoundError(msg)
         canvas = Path(canvas_path)
         if not canvas.is_file():
             msg = f"Canvas file '{canvas_path}' does not exist or is not a file."
@@ -145,10 +145,7 @@ class VectorStoreRetriever(langchain_core.retrievers.BaseRetriever):
 
 
 if __name__ == "__main__":  # pragma: no cover - example usage
-    retriever = VectorStoreRetriever(
-        "/Users/work/Downloads/canvas.imscc",
-        "/Users/work/Downloads/piazza.zip",
-    )
+    retriever = VectorStoreRetriever("canvas.imscc", "piazza.zip")
     results = retriever.retrieve("machine learning", k=3)
     for result in results:
         print(result)

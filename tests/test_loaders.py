@@ -1,4 +1,7 @@
 from pathlib import Path
+import datetime
+
+import pytest
 
 from rag_ed.loaders.canvas import CanvasLoader
 from rag_ed.loaders.piazza import PiazzaLoader
@@ -13,6 +16,15 @@ def test_canvas_loader_returns_document(tmp_path: Path) -> None:
     assert any("minimal Common Cartridge web page" in d.page_content for d in docs)
     for doc in docs:
         assert doc.metadata["course"] == "canvas_sample"
+        datetime.datetime.fromisoformat(doc.metadata["timestamp"])
+
+
+def test_canvas_loader_missing_file() -> None:
+    with pytest.raises(
+        FileNotFoundError,
+        match="Canvas file 'does_not_exist.imscc' does not exist or is not a file.",
+    ):
+        CanvasLoader("does_not_exist.imscc")
 
 
 def test_piazza_loader_returns_document(tmp_path: Path) -> None:
@@ -22,3 +34,12 @@ def test_piazza_loader_returns_document(tmp_path: Path) -> None:
     assert any("Hello from Piazza" in d.page_content for d in docs)
     for doc in docs:
         assert doc.metadata["course"] == "piazza_sample"
+        datetime.datetime.fromisoformat(doc.metadata["timestamp"])
+
+
+def test_piazza_loader_missing_file() -> None:
+    with pytest.raises(
+        FileNotFoundError,
+        match="Piazza file 'does_not_exist.zip' does not exist or is not a file.",
+    ):
+        PiazzaLoader("does_not_exist.zip")

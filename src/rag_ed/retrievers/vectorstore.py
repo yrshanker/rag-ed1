@@ -1,4 +1,4 @@
-import os
+from pathlib import Path
 
 import langchain.text_splitter
 import langchain.vectorstores
@@ -20,7 +20,7 @@ class VectorStoreRetriever(langchain_core.retrievers.BaseRetriever):
         piazza_path: str,
         in_memory: bool = False,
         k: int = 5,
-    ):
+    ) -> None:
         """Initialize the retriever with the desired vector storage type.
 
         Args:
@@ -30,15 +30,17 @@ class VectorStoreRetriever(langchain_core.retrievers.BaseRetriever):
             k (int): Default number of top documents to retrieve.
         """
 
-        if not os.path.exists(canvas_path):
-            msg = f"Canvas file '{canvas_path}' does not exist."
+        canvas = Path(canvas_path)
+        if not canvas.is_file():
+            msg = f"Canvas file '{canvas_path}' does not exist or is not a file."
             raise FileNotFoundError(msg)
-        if not os.path.exists(piazza_path):
-            msg = f"Piazza file '{piazza_path}' does not exist."
+        piazza = Path(piazza_path)
+        if not piazza.is_file():
+            msg = f"Piazza file '{piazza_path}' does not exist or is not a file."
             raise FileNotFoundError(msg)
 
-        canvas_docs = CanvasLoader(canvas_path).load()
-        piazza_docs = PiazzaLoader(piazza_path).load()
+        canvas_docs = CanvasLoader(str(canvas)).load()
+        piazza_docs = PiazzaLoader(str(piazza)).load()
         documents = canvas_docs + piazza_docs
 
         text_splitter = langchain.text_splitter.RecursiveCharacterTextSplitter(

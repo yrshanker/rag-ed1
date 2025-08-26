@@ -2,7 +2,8 @@ import argparse
 
 from langchain.chains import RetrievalQA
 from langchain.llms import OpenAI
-from src.retrievers.vectorstore import VectorStoreRetriever
+
+from rag_ed.retrievers.vectorstore import VectorStoreRetriever
 
 
 def one_step_retrieval(query: str) -> str:

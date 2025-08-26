@@ -1,5 +1,6 @@
-from smolagents import Tool
-from ..retrievers.vectorstore import VectorStoreRetriever
+from smolagents import CodeAgent, OpenAIServerModel, Tool
+
+from rag_ed.retrievers.vectorstore import VectorStoreRetriever
 
 
 class RetrieverTool(Tool):
@@ -29,13 +30,21 @@ class RetrieverTool(Tool):
         )
 
 
-retriever_tool = RetrieverTool(
-    canvas_path="/Users/work/Downloads/canvas.imscc",
-    piazza_path="/Users/work/Downloads/piazza.zip",
-)
+def create_retriever_tool(
+    canvas_path: str, piazza_path: str, **kwargs
+) -> RetrieverTool:
+    """Instantiate a :class:`RetrieverTool` with the provided data sources."""
 
-from smolagents import OpenAIServerModel, CodeAgent
+    return RetrieverTool(canvas_path, piazza_path, **kwargs)
 
-agent = CodeAgent(
-    tools=[retriever_tool], model=OpenAIServerModel(), max_steps=4, verbosity_level=2
-)
+
+def create_agent(canvas_path: str, piazza_path: str, **kwargs) -> CodeAgent:
+    """Build a :class:`CodeAgent` that uses the :class:`RetrieverTool`."""
+
+    retriever_tool = create_retriever_tool(canvas_path, piazza_path, **kwargs)
+    return CodeAgent(
+        tools=[retriever_tool],
+        model=OpenAIServerModel(),
+        max_steps=4,
+        verbosity_level=2,
+    )

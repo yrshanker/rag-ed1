@@ -7,8 +7,8 @@ import langchain_core.documents
 import langchain_core.retrievers
 import langchain_openai.embeddings
 
-from ..loaders.canvas import CanvasLoader
-from ..loaders.piazza import PiazzaLoader
+from rag_ed.loaders.canvas import CanvasLoader
+from rag_ed.loaders.piazza import PiazzaLoader
 
 
 class VectorStoreRetriever(langchain_core.retrievers.BaseRetriever):

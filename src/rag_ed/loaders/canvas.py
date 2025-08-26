@@ -12,7 +12,6 @@ from langchain_community.document_loaders import (
     UnstructuredHTMLLoader,
     UnstructuredMarkdownLoader,
     UnstructuredPDFLoader,
-    UnstructuredPowerPointLoader,
     UnstructuredTSVLoader,
     UnstructuredXMLLoader,
     UnstructuredWordDocumentLoader,
@@ -24,13 +23,14 @@ import tqdm
 
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".bmp"}
 
+# Skip binary formats that require heavy optional dependencies.
+SKIP_EXTENSIONS = IMAGE_EXTENSIONS | {".ppt", ".pptx"}
+
 FILE_LOADERS: dict[str, type[BaseLoader]] = {
     ".html": UnstructuredHTMLLoader,
     ".xml": UnstructuredXMLLoader,
     ".pdf": UnstructuredPDFLoader,
     ".md": UnstructuredMarkdownLoader,
-    ".ppt": UnstructuredPowerPointLoader,
-    ".pptx": UnstructuredPowerPointLoader,
     ".doc": UnstructuredWordDocumentLoader,
     ".docx": UnstructuredWordDocumentLoader,
     ".xls": UnstructuredExcelLoader,
@@ -105,8 +105,8 @@ class CanvasLoader(BaseLoader):
             if not os.path.isfile(file_path):
                 continue
             file_extension = os.path.splitext(file_path)[1].lower()
-            if file_extension in IMAGE_EXTENSIONS:
-                continue  # Skip image files
+            if file_extension in SKIP_EXTENSIONS:
+                continue  # Skip unsupported binary files
 
             loader_cls = FILE_LOADERS.get(file_extension)
             if loader_cls is not None:

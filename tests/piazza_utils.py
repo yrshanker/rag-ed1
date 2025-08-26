@@ -72,8 +72,14 @@ def generate_piazza_export(
     ]
 
     with zipfile.ZipFile(path, "w", compression=zipfile.ZIP_DEFLATED) as zf:
-        zf.writestr("config.json", json.dumps(config))
-        zf.writestr("users.json", json.dumps(users))
-        zf.writestr("class_content_flat.json", json.dumps(content))
+        config_info = zipfile.ZipInfo("config.json")
+        config_info.date_time = (2023, 1, 1, 0, 0, 0)
+        zf.writestr(config_info, json.dumps(config))
+        users_info = zipfile.ZipInfo("users.json")
+        users_info.date_time = (2023, 1, 2, 0, 0, 0)
+        zf.writestr(users_info, json.dumps(users))
+        content_info = zipfile.ZipInfo("class_content_flat.json")
+        content_info.date_time = (2023, 1, 3, 0, 0, 0)
+        zf.writestr(content_info, json.dumps(content))
 
     return path

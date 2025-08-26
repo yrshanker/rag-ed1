@@ -18,3 +18,4 @@ smolagents
 requests
 langchain-openai
 types-requests
+networkx

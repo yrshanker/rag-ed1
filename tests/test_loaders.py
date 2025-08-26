@@ -14,7 +14,7 @@ from tests.piazza_utils import generate_piazza_export
 def test_canvas_loader_returns_document(tmp_path: Path) -> None:
     path = generate_imscc(tmp_path / "canvas_sample.imscc", title="canvas_sample")
     docs = CanvasLoader(str(path)).load()
-    assert len(docs) == 2
+    assert len(docs) == 3
     assert any("minimal Common Cartridge web page" in d.page_content for d in docs)
     for doc in docs:
         assert doc.metadata["course"] == "canvas_sample"

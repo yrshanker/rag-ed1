@@ -1,11 +1,15 @@
+"""Tests for agent modules."""
+
 import types
 
 import langchain_core.documents
-from rag_ed.agents import self_querying_retriever_agent as sqra
-from rag_ed.agents import vanilla_rag
+
+from rag_ed.agents import self_querying, vanilla_rag
 
 
 def test_one_step_retrieval(monkeypatch) -> None:
+    """``one_step_retrieval`` delegates to the underlying QA chain."""
+
     class DummyRetriever:
         def __init__(self, *args, **kwargs) -> None:
             self.vector_store = object()
@@ -18,7 +22,7 @@ def test_one_step_retrieval(monkeypatch) -> None:
         return DummyQA()
 
     class DummyOpenAI:
-        def __init__(self, *args, **kwargs) -> None:
+        def __init__(self, *args, **kwargs) -> None:  # noqa: D401
             pass
 
     monkeypatch.setattr(vanilla_rag, "VectorStoreRetriever", DummyRetriever)
@@ -28,34 +32,34 @@ def test_one_step_retrieval(monkeypatch) -> None:
         types.SimpleNamespace(from_chain_type=dummy_from_chain_type),
     )
     monkeypatch.setattr(vanilla_rag, "OpenAI", DummyOpenAI)
-    assert vanilla_rag.one_step_retrieval("q") == "dummy"
+    assert (
+        vanilla_rag.one_step_retrieval("q", canvas_path="c", piazza_path="p") == "dummy"
+    )
 
 
-def test_retriever_tool(monkeypatch) -> None:
+def test_run_agent_decomposes_queries(monkeypatch) -> None:
+    """The self-querying agent retrieves for each sub-query."""
+
     class DummyRetriever:
+        def __init__(self, *args, **kwargs) -> None:  # noqa: D401
+            self.queries: list[str] = []
+
         def retrieve(
             self, query: str, k: int
-        ) -> list[langchain_core.documents.Document]:
-            return [langchain_core.documents.Document(page_content="d")]
+        ) -> list[langchain_core.documents.Document]:  # noqa: D401
+            self.queries.append(query)
+            return [
+                langchain_core.documents.Document(page_content=f"result for {query}")
+            ]
 
-    monkeypatch.setattr(sqra, "VectorStoreRetriever", lambda *a, **k: DummyRetriever())
-    tool = sqra.create_retriever_tool("c", "p")
-    assert "d" in tool.forward("anything")
+    dummy = DummyRetriever()
+    monkeypatch.setenv("CANVAS_PATH", "c")
+    monkeypatch.setenv("PIAZZA_PATH", "p")
+    monkeypatch.setattr(self_querying, "VectorStoreRetriever", lambda *a, **k: dummy)
+    self_querying._RETRIEVER = None
 
+    result = self_querying.run_agent("first part and then second part")
 
-def test_create_agent(monkeypatch) -> None:
-    class DummyCodeAgent:
-        def __init__(
-            self, tools, model, max_steps, verbosity_level
-        ) -> None:  # noqa: D401
-            self.tools = tools
-            self.model = model
-
-    class DummyModel:
-        pass
-
-    monkeypatch.setattr(sqra, "VectorStoreRetriever", lambda *a, **k: object())
-    monkeypatch.setattr(sqra, "CodeAgent", DummyCodeAgent)
-    monkeypatch.setattr(sqra, "OpenAIServerModel", DummyModel)
-    agent = sqra.create_agent("c", "p")
-    assert len(agent.tools) == 1
+    assert dummy.queries == ["first part", "second part"]
+    assert "result for first part" in result
+    assert "result for second part" in result

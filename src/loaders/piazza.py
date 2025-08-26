@@ -2,14 +2,16 @@
 This file contains the PiazzaLoader class, which is responsible for loading files from Piazza
 """
 
+import datetime
 import os
 
 import langchain_community.document_loaders
+import langchain_core.document_loaders
 import langchain_core.documents
 import tqdm
 
 
-class PiazzaLoader(object):
+class PiazzaLoader(langchain_core.document_loaders.BaseLoader):
     """
     The PiazzaLoader class is responsible for loading files from a zipped file which can be exported from Piazza.
     """
@@ -21,7 +23,11 @@ class PiazzaLoader(object):
         Args:
             file_path (str): The path to the zipped file.
         """
+        if not os.path.exists(file_path):
+            msg = f"Piazza file '{file_path}' does not exist."
+            raise FileNotFoundError(msg)
         self.zipped_file_path = file_path
+        self.course = os.path.splitext(os.path.basename(file_path))[0]
 
     def load(self):
         """
@@ -80,6 +86,14 @@ class PiazzaLoader(object):
                     ).load()
                 else:
                     continue  # Skip other file types
+
+                timestamp = datetime.datetime.fromtimestamp(
+                    os.path.getmtime(file_path)
+                ).isoformat()
+                for doc in new_documents:
+                    doc.metadata.setdefault("source", file_path)
+                    doc.metadata["course"] = self.course
+                    doc.metadata["timestamp"] = timestamp
                 loaded_documents += new_documents
         return loaded_documents
 

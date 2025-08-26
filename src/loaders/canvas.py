@@ -2,15 +2,16 @@
 This file contains the CanvasLoader class, which is responsible for loading files from Canvas
 """
 
+import datetime
 import os
 
 import langchain_community.document_loaders
-import langchain_core
+import langchain_core.document_loaders
 import langchain_core.documents
 import tqdm
 
 
-class CanvasLoader(object):
+class CanvasLoader(langchain_core.document_loaders.BaseLoader):
     """
     The CanvasLoader class is responsible for loading files from a zipped .imscc file which can be exported from Canvas.
     """
@@ -22,7 +23,11 @@ class CanvasLoader(object):
         Args:
             file_path (str): The path to the zipped .imscc file.
         """
+        if not os.path.exists(file_path):
+            msg = f"Canvas file '{file_path}' does not exist."
+            raise FileNotFoundError(msg)
         self.zipped_file_path = file_path
+        self.course = os.path.splitext(os.path.basename(file_path))[0]
 
     def load(self):
         """
@@ -91,13 +96,22 @@ class CanvasLoader(object):
                             file_path
                         ).load()
                     )
-
                 else:
                     with open(file_path, "r") as file:
                         content = file.read()
                     new_documents = [
-                        langchain_core.documents.Document(page_content=content)
+                        langchain_core.documents.Document(
+                            page_content=content, metadata={"source": file_path}
+                        )
                     ]
+
+                timestamp = datetime.datetime.fromtimestamp(
+                    os.path.getmtime(file_path)
+                ).isoformat()
+                for doc in new_documents:
+                    doc.metadata.setdefault("source", file_path)
+                    doc.metadata["course"] = self.course
+                    doc.metadata["timestamp"] = timestamp
                 loaded_documents += new_documents
         return loaded_documents
 

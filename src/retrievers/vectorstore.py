@@ -1,69 +1,77 @@
-from langchain_openai.embeddings import OpenAIEmbeddings
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.vectorstores import FAISS, InMemoryVectorStore
+import os
+
+import langchain.text_splitter
+import langchain.vectorstores
+import langchain_core.callbacks.manager
+import langchain_core.documents
+import langchain_core.retrievers
+import langchain_openai.embeddings
 
 from ..loaders.canvas import CanvasLoader
 from ..loaders.piazza import PiazzaLoader
 
 
-class VectorStoreRetriever:
-    """
-    A retriever that uses CanvasLoader and PiazzaLoader to load documents and perform vector retrieval.
-    """
+class VectorStoreRetriever(langchain_core.retrievers.BaseRetriever):
+    """A retriever that uses CanvasLoader and PiazzaLoader to perform vector retrieval."""
 
     def __init__(
         self,
         canvas_path: str,
         piazza_path: str,
         in_memory: bool = False,
+        k: int = 5,
     ):
-        """
-        Initialize the retriever with the desired vector storage type.
+        """Initialize the retriever with the desired vector storage type.
 
         Args:
             canvas_path (str): Path to the Canvas .imscc file.
             piazza_path (str): Path to the Piazza zip file.
             in_memory (bool): If True, use in-memory vector storage. Otherwise, use FAISS.
-            hf_embedding_model (str): Hugging Face model name for embeddings.
+            k (int): Default number of top documents to retrieve.
         """
 
-        # Load documents from Canvas and Piazza
+        if not os.path.exists(canvas_path):
+            msg = f"Canvas file '{canvas_path}' does not exist."
+            raise FileNotFoundError(msg)
+        if not os.path.exists(piazza_path):
+            msg = f"Piazza file '{piazza_path}' does not exist."
+            raise FileNotFoundError(msg)
+
         canvas_docs = CanvasLoader(canvas_path).load()
         piazza_docs = PiazzaLoader(piazza_path).load()
         documents = canvas_docs + piazza_docs
 
-        # Chunk the documents using langchain
-        text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=1000,
-            chunk_overlap=200,
-            length_function=len,
+        text_splitter = langchain.text_splitter.RecursiveCharacterTextSplitter(
+            chunk_size=1000, chunk_overlap=200, length_function=len
         )
         documents = text_splitter.split_documents(documents)
 
-        # Create embeddings object that uses local api endpoint
-        embeddings = OpenAIEmbeddings()
+        embeddings = langchain_openai.embeddings.OpenAIEmbeddings()
 
-        # Create the database
         if in_memory:
-            self.vector_store = InMemoryVectorStore.from_documents(
-                documents, embeddings
+            self.vector_store = (
+                langchain.vectorstores.InMemoryVectorStore.from_documents(
+                    documents, embeddings
+                )
             )
         else:
-            self.vector_store = FAISS.from_documents(documents, embeddings)
+            self.vector_store = langchain.vectorstores.FAISS.from_documents(
+                documents, embeddings
+            )
+        self.k = k
 
-    def retrieve(self, query: str, k: int = 5):
-        """
-        Retrieve the top-k documents matching the query.
+    def _get_relevant_documents(
+        self,
+        query: str,
+        *,
+        run_manager: langchain_core.callbacks.manager.CallbackManagerForRetrieverRun,
+    ) -> list[langchain_core.documents.Document]:
+        return self.vector_store.similarity_search(query, k=self.k)
 
-        Args:
-            query (str): The query string.
-            k (int): The number of top documents to retrieve.
-
-        Returns:
-            list: A list of retrieved documents.
-        """
-
-        return self.vector_store.similarity_search(query, k=k)
+    def retrieve(
+        self, query: str, k: int | None = None
+    ) -> list[langchain_core.documents.Document]:
+        return self.vector_store.similarity_search(query, k=k or self.k)
 
 
 if __name__ == "__main__":

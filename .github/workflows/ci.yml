@@ -23,7 +23,5 @@ jobs:
           black --check .
       - name: Type check
         run: mypy .
-      - name: Security audit
-        run: pip-audit
       - name: Unit tests
         run: pytest

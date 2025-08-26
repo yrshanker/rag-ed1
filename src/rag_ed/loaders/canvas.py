@@ -4,6 +4,7 @@ This file contains the CanvasLoader class, which is responsible for loading file
 
 import datetime
 import os
+from pathlib import Path
 
 import langchain_community.document_loaders
 import langchain_core.document_loaders
@@ -16,24 +17,25 @@ class CanvasLoader(langchain_core.document_loaders.BaseLoader):
     The CanvasLoader class is responsible for loading files from a zipped .imscc file which can be exported from Canvas.
     """
 
-    def __init__(self, file_path: str):
+    def __init__(self, file_path: str) -> None:
         """
         Initialize the CanvasLoader with the path to the zipped .imscc file.
 
         Args:
             file_path (str): The path to the zipped .imscc file.
         """
-        if not os.path.exists(file_path):
-            msg = f"Canvas file '{file_path}' does not exist."
+        path = Path(file_path)
+        if not path.is_file():
+            msg = f"Canvas file '{file_path}' does not exist or is not a file."
             raise FileNotFoundError(msg)
-        self.zipped_file_path = file_path
-        self.course = os.path.splitext(os.path.basename(file_path))[0]
+        self.zipped_file_path = str(path)
+        self.course = path.stem
 
-    def load(self):
-        """
-        Load the files from the zipped .imscc file.
+    def load(self) -> list[langchain_core.documents.Document]:
+        """Load the files from the zipped .imscc file.
+
         Returns:
-            list: A list of loaded documents.
+            list[Document]: A list of loaded documents.
         """
         list_of_files_to_load = self._unzip_imscc_file()
         return self._load_files(list_of_files_to_load)

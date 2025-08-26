@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import pytest
 import langchain_openai.embeddings
 from rag_ed.loaders.canvas import CanvasLoader
 from rag_ed.loaders.piazza import PiazzaLoader
@@ -45,3 +46,11 @@ def test_vector_store_retriever(monkeypatch, tmp_path: Path) -> None:
     object.__setattr__(retriever, "k", 1)
     results = retriever.retrieve("Hello", k=1)
     assert len(results) == 1
+
+
+def test_vector_store_retriever_missing_files() -> None:
+    with pytest.raises(
+        FileNotFoundError,
+        match="Canvas file 'missing.imscc' does not exist or is not a file.",
+    ):
+        VectorStoreRetriever("missing.imscc", "missing.zip")

@@ -28,7 +28,7 @@ dependencies = [
 dev = ["black"]
 
 [project.scripts]
-vanilla-rag = "src.agents.vanilla_rag:main"
+vanilla-rag = "rag_ed.agents.vanilla_rag:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

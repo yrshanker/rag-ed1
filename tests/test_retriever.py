@@ -1,7 +1,7 @@
 from pathlib import Path
-
 import os
 import langchain_core.documents
+import pytest
 import langchain_openai.embeddings
 import rag_ed.retrievers.vectorstore
 from rag_ed.loaders.canvas import CanvasLoader
@@ -243,3 +243,10 @@ def test_chroma_persistence(monkeypatch, tmp_path: Path) -> None:
     )
     assert DummyChroma.saved == [str(persist_dir)]
     assert DummyChroma.loaded[-1] == str(persist_dir)
+
+def test_vector_store_retriever_missing_files() -> None:
+    with pytest.raises(
+        FileNotFoundError,
+        match="Canvas file 'missing.imscc' does not exist or is not a file.",
+    ):
+        VectorStoreRetriever("missing.imscc", "missing.zip")

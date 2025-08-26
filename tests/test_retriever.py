@@ -248,6 +248,6 @@ def test_chroma_persistence(monkeypatch, tmp_path: Path) -> None:
 def test_vector_store_retriever_missing_files() -> None:
     with pytest.raises(
         FileNotFoundError,
-        match="Canvas file 'missing.imscc' does not exist or is not a file.",
+        match="Canvas file 'missing.imscc' does not exist.",
     ):
         VectorStoreRetriever("missing.imscc", "missing.zip")

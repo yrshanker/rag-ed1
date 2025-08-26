@@ -1,5 +1,6 @@
 from pathlib import Path
 import datetime
+import zipfile
 
 import pytest
 
@@ -17,6 +18,22 @@ def test_canvas_loader_returns_document(tmp_path: Path) -> None:
     for doc in docs:
         assert doc.metadata["course"] == "canvas_sample"
         datetime.datetime.fromisoformat(doc.metadata["timestamp"])
+
+
+def test_canvas_loader_handles_pptx(tmp_path: Path) -> None:
+    path = generate_imscc(tmp_path / "canvas_sample.imscc", title="canvas_sample")
+    pptx_path = tmp_path / "sample.pptx"
+    from pptx import Presentation
+
+    presentation = Presentation()
+    slide = presentation.slides.add_slide(presentation.slide_layouts[0])
+    slide.shapes.title.text = "Hello PPTX"
+    presentation.save(str(pptx_path))
+
+    with zipfile.ZipFile(path, "a") as zf:
+        zf.write(pptx_path, arcname="webcontent/sample.pptx")
+    docs = CanvasLoader(str(path)).load()
+    assert any("Hello PPTX" in d.page_content for d in docs)
 
 
 def test_canvas_loader_missing_file() -> None:

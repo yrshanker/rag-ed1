@@ -22,27 +22,35 @@ VectorStoreType = Literal["faiss", "in_memory", "chroma"]
 
 
 class VectorStoreRetriever(langchain_core.retrievers.BaseRetriever):
-    """Retrieve documents using a configurable vector store.
+    """
+    Retrieve documents using a configurable vector store backend.
+
+    This retriever supports multiple vector store types, custom embedding models,
+    and optional persistence for scalable and repeatable retrieval workflows.
 
     Parameters
     ----------
     canvas_path : str
-        Path to the Canvas ``.imscc`` file.
+        Path to the Canvas `.imscc` file containing course content.
     piazza_path : str
-        Path to the Piazza export ``.zip`` file.
+        Path to the Piazza export `.zip` file containing forum posts.
     vector_store_type : {"faiss", "in_memory", "chroma"}, optional
-        Backend for storing document vectors. Defaults to ``"faiss"``.
+        Type of vector store backend to use:
+            - "faiss": Fast, persistent disk-based index (default).
+            - "in_memory": Lightweight, non-persistent in-memory index.
+            - "chroma": Persistent disk-based index with advanced features.
     embeddings : langchain_core.embeddings.Embeddings, optional
-        Embedding model to use. If omitted, :class:`langchain_openai.embeddings.OpenAIEmbeddings`
-        is used.
+        Embedding model instance for converting text to vectors. If not provided,
+        uses `langchain_openai.embeddings.OpenAIEmbeddings` by default.
     persist_directory : str, optional
-        Directory for persisting and loading vector indexes.
-        Only applies to ``"faiss"`` and ``"chroma"`` stores.
+        Directory path for saving/loading persistent vector indexes. Only applies
+        to "faiss" and "chroma" backends. If omitted, indexes are not persisted.
     k : int, optional
-        Default number of top documents to retrieve.
+        Default number of top documents to retrieve per query. Defaults to 5.
 
     Examples
     --------
+    Basic usage with in-memory store:
     >>> from rag_ed.retrievers.vectorstore import VectorStoreRetriever
     >>> retriever = VectorStoreRetriever(
     ...     "canvas.imscc",
@@ -50,8 +58,21 @@ class VectorStoreRetriever(langchain_core.retrievers.BaseRetriever):
     ...     vector_store_type="in_memory",
     ... )
     >>> docs = retriever.retrieve("machine learning")
-    >>> len(docs)
+    >>> print(len(docs))
     5
+
+    Using a custom embedding model and persistent FAISS store:
+    >>> from langchain_openai.embeddings import OpenAIEmbeddings
+    >>> retriever = VectorStoreRetriever(
+    ...     "canvas.imscc",
+    ...     "piazza.zip",
+    ...     vector_store_type="faiss",
+    ...     embeddings=OpenAIEmbeddings(),
+    ...     persist_directory="./faiss_index",
+    ...     k=10,
+    ... )
+    >>> docs = retriever.retrieve("deep learning")
+    >>> print([doc.page_content for doc in docs])
     """
 
     vector_store: Any

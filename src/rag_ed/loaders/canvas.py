@@ -42,15 +42,22 @@ FILE_LOADERS: dict[str, type[BaseLoader]] = {
 
 class CanvasLoader(BaseLoader):
     """
-    The CanvasLoader class is responsible for loading files from a zipped .imscc file which can be exported from Canvas.
+    CanvasLoader loads files from a zipped .imscc file exported from Canvas.
+
+    Parameters
+    ----------
+    file_path : str
+        Path to the zipped .imscc file.
     """
 
     def __init__(self, file_path: str) -> None:
         """
-        Initialize the CanvasLoader with the path to the zipped .imscc file.
+        Initialize CanvasLoader.
 
-        Args:
-            file_path (str): The path to the zipped .imscc file.
+        Parameters
+        ----------
+        file_path : str
+            Path to the zipped .imscc file.
         """
         path = Path(file_path)
         if not path.is_file():
@@ -60,45 +67,52 @@ class CanvasLoader(BaseLoader):
         self.course = path.stem
 
     def load(self) -> list[Document]:
-        """Load the files from the zipped .imscc file.
-
-        Returns:
-            list[Document]: A list of loaded documents.
         """
-        list_of_files_to_load = self._unzip_imscc_file()
-        return self._load_files(list_of_files_to_load)
+        Load all files from the zipped .imscc file.
 
-    def _unzip_imscc_file(self) -> list[str]:
+        Returns
+        -------
+        list of Document
+            List of loaded documents.
+
+        Examples
+        --------
+        >>> loader = CanvasLoader('course.imscc')
+        >>> docs = loader.load()
+        >>> print(len(docs))
         """
-        Unzip the .imscc file to a temporary location, recursively traverse the file tree of the unzipped directory,
-        and return a list of files to load.
+        from rag_ed.loaders.utils import extract_zip_to_temp
 
-        Returns:
-            list: A list of file paths to load.
-        """
-        import zipfile
-        import tempfile
+        def process(temp_dir: str) -> list[Document]:
+            file_paths = []
+            for root, _, files in tqdm.tqdm(os.walk(temp_dir)):
+                for file in files:
+                    file_paths.append(os.path.join(root, file))
+            return self._load_files(file_paths)
 
-        temp_dir = tempfile.mkdtemp()
-        with zipfile.ZipFile(self.zipped_file_path, "r") as zip_ref:
-            zip_ref.extractall(temp_dir)
+        return extract_zip_to_temp(self.zipped_file_path, process)
 
-        file_paths = []
-        for root, _, files in tqdm.tqdm(os.walk(temp_dir)):
-            for file in files:
-                file_paths.append(os.path.join(root, file))
-
-        return file_paths
+    # _unzip_imscc_file is no longer needed; all processing is done in load()
 
     def _load_files(self, list_of_files_to_load: list[str]) -> list[Document]:
         """
-        Load the files from the list of files to load.
+        Load files from a list of file paths.
 
-        Args:
-            list_of_files_to_load (list): A list of file paths to load.
+        Parameters
+        ----------
+        list_of_files_to_load : list of str
+            List of file paths to load.
 
-        Returns:
-            list[Document]: A list of loaded documents.
+        Returns
+        -------
+        list of Document
+            List of loaded documents.
+
+        Examples
+        --------
+        >>> loader = CanvasLoader('course.imscc')
+        >>> files = loader._unzip_imscc_file()
+        >>> docs = loader._load_files(files)
         """
         loaded_documents: list[Document] = []
         for file_path in tqdm.tqdm(list_of_files_to_load):

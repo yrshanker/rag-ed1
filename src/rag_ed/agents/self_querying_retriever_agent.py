@@ -14,9 +14,11 @@ class RetrieverTool(Tool):
     }
     output_type = "string"
 
-    def __init__(self, canvas_path, piazza_path, **kwargs):
+    def __init__(self, canvas_path: str, piazza_path: str, **kwargs) -> None:
         super().__init__(**kwargs)
-        self.retriever = VectorStoreRetriever(canvas_path, piazza_path, in_memory=True)
+        self.retriever = VectorStoreRetriever(
+            canvas_path, piazza_path, vector_store_type="in_memory"
+        )
 
     def forward(self, query: str) -> str:
         assert isinstance(query, str), "Your search query must be a string"
@@ -44,7 +46,7 @@ def create_agent(canvas_path: str, piazza_path: str, **kwargs) -> CodeAgent:
     retriever_tool = create_retriever_tool(canvas_path, piazza_path, **kwargs)
     return CodeAgent(
         tools=[retriever_tool],
-        model=OpenAIServerModel(),
+        model=OpenAIServerModel(model_id="dummy-model-id"),
         max_steps=4,
         verbosity_level=2,
     )

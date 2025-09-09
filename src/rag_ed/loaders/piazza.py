@@ -14,15 +14,22 @@ import tqdm
 
 class PiazzaLoader(langchain_core.document_loaders.BaseLoader):
     """
-    The PiazzaLoader class is responsible for loading files from a zipped file which can be exported from Piazza.
+    PiazzaLoader loads files from a zipped file exported from Piazza.
+
+    Parameters
+    ----------
+    file_path : str
+        Path to the zipped Piazza file.
     """
 
     def __init__(self, file_path: str) -> None:
         """
-        Initialize the PiazzaLoader with the path to the zipped file.
+        Initialize PiazzaLoader.
 
-        Args:
-            file_path (str): The path to the zipped file.
+        Parameters
+        ----------
+        file_path : str
+            Path to the zipped Piazza file.
         """
         path = Path(file_path)
         if not path.is_file():
@@ -32,47 +39,54 @@ class PiazzaLoader(langchain_core.document_loaders.BaseLoader):
         self.course = path.stem
 
     def load(self) -> list[langchain_core.documents.Document]:
-        """Load the files from the zipped Piazza export.
-
-        Returns:
-            list[Document]: A list of loaded documents.
         """
-        list_of_files_to_load = self._unzip_piazza_file()
-        return self._load_files(list_of_files_to_load)
+        Load all files from the zipped Piazza export.
 
-    def _unzip_piazza_file(self) -> list[str]:
+        Returns
+        -------
+        list of Document
+            List of loaded documents.
+
+        Examples
+        --------
+        >>> loader = PiazzaLoader('piazza.zip')
+        >>> docs = loader.load()
+        >>> print(len(docs))
         """
-        Unzip the file to a temporary location, recursively traverse the file tree of the unzipped directory,
-        and return a list of files to load.
+        from rag_ed.loaders.utils import extract_zip_to_temp
 
-        Returns:
-            list: A list of file paths to load.
-        """
-        import zipfile
-        import tempfile
+        def process(temp_dir: str) -> list[langchain_core.documents.Document]:
+            file_paths = []
+            for root, _, files in tqdm.tqdm(os.walk(temp_dir)):
+                for file in files:
+                    file_paths.append(os.path.join(root, file))
+            return self._load_files(file_paths)
 
-        temp_dir = tempfile.mkdtemp()
-        with zipfile.ZipFile(self.zipped_file_path, "r") as zip_ref:
-            zip_ref.extractall(temp_dir)
+        return extract_zip_to_temp(self.zipped_file_path, process)
 
-        file_paths = []
-        for root, _, files in tqdm.tqdm(os.walk(temp_dir)):
-            for file in files:
-                file_paths.append(os.path.join(root, file))
-
-        return file_paths
+    # _unzip_piazza_file is no longer needed; all processing is done in load()
 
     def _load_files(
         self, list_of_files_to_load: list[str]
     ) -> list[langchain_core.documents.Document]:
         """
-        Load the files from the list of files to load.
+        Load files from a list of file paths.
 
-        Args:
-            list_of_files_to_load (list): A list of file paths to load.
+        Parameters
+        ----------
+        list_of_files_to_load : list of str
+            List of file paths to load.
 
-        Returns:
-            list[Document]: A list of loaded documents.
+        Returns
+        -------
+        list of Document
+            List of loaded documents.
+
+        Examples
+        --------
+        >>> loader = PiazzaLoader('piazza.zip')
+        >>> files = loader._unzip_piazza_file()
+        >>> docs = loader._load_files(files)
         """
         loaded_documents = []
         for file_path in tqdm.tqdm(list_of_files_to_load):

@@ -49,7 +49,15 @@ class GraphRetriever(langchain_core.retrievers.BaseRetriever):
     def retrieve(
         self, artifact_id: str, *, max_depth: int | None = None
     ) -> list[langchain_core.documents.Document]:
-        """Return documents connected to ``artifact_id`` within ``max_depth``."""
+        """Return documents connected to ``artifact_id`` within ``max_depth``.
+
+        Raises
+        ------
+        KeyError
+            If ``artifact_id`` is not present in the graph.
+        """
+        if artifact_id not in self._graph.graph:
+            raise KeyError(f"Artifact ID '{artifact_id}' not found in graph.")
         depth = max_depth if max_depth is not None else self._max_depth
         visited = {artifact_id}
         docs: list[langchain_core.documents.Document] = []

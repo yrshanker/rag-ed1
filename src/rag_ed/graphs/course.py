@@ -38,7 +38,15 @@ class CourseGraph:
         self._graph.add_edge(source_id, target_id)
 
     def neighbors(self, artifact_id: str) -> list[langchain_core.documents.Document]:
-        """Return documents directly connected to ``artifact_id``."""
+        """Return documents directly connected to ``artifact_id``.
+
+        Raises
+        ------
+        KeyError
+            If ``artifact_id`` is not present in the graph.
+        """
+        if artifact_id not in self._graph:
+            raise KeyError(f"Artifact ID '{artifact_id}' not found in graph.")
         return [
             self._graph.nodes[n]["document"] for n in self._graph.neighbors(artifact_id)
         ]

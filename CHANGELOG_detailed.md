@@ -1,4 +1,4 @@
-# RAG-ed1 Troubleshooting & Change Log
+# RAG-ed Troubleshooting & Change Log
 
 This document provides a comprehensive overview of all problems encountered, errors faced, troubleshooting steps, and code changes made during the development and refactoring of the RAG-ed1 project. It is intended to serve as a reference for future maintainers and contributors.
 

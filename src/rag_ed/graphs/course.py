@@ -33,9 +33,19 @@ class CourseGraph:
         """Add a document to the graph."""
         self._graph.add_node(artifact_id, document=document)
 
-    def add_relationship(self, source_id: str, target_id: str) -> None:
-        """Create a directed edge between two artifacts."""
-        self._graph.add_edge(source_id, target_id)
+    def add_relationship(self, source_id: str, target_id: str, **attrs) -> None:
+        """Create a directed edge between two artifacts.
+
+        Parameters
+        ----------
+        source_id : str
+            The source node identifier.
+        target_id : str
+            The target node identifier.
+        **attrs : Any
+            Optional edge attributes to annotate the relationship.
+        """
+        self._graph.add_edge(source_id, target_id, **attrs)
 
     def neighbors(self, artifact_id: str) -> list[langchain_core.documents.Document]:
         """Return documents directly connected to ``artifact_id``.

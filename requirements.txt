@@ -19,3 +19,4 @@ requests
 langchain-openai
 types-requests
 networkx
+gradio>=5.8.0,<6.0

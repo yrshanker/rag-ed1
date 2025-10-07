@@ -97,9 +97,61 @@ class PiazzaLoader(langchain_core.document_loaders.BaseLoader):
                         file_path
                     ).load()
                 elif file_extension == ".json":
-                    new_documents = langchain_community.document_loaders.JSONLoader(
+                    # Load JSON files and, if they contain Piazza-style records
+                    # (class_content_flat.json), convert each record into a
+                    # Document and map important fields into metadata.
+                    raw_docs = langchain_community.document_loaders.JSONLoader(
                         file_path, jq_schema=".", text_content=False
                     ).load()
+                    # JSONLoader returns list of documents where .page_content
+                    # often contains the serialized JSON object when
+                    # text_content=False. Try to normalize into proper
+                    # Document objects with metadata fields extracted.
+                    new_documents = []
+                    import json
+
+                    for rd in raw_docs:
+                        payload = rd.page_content
+                        parsed = None
+                        if isinstance(payload, dict):
+                            parsed = payload
+                        elif isinstance(payload, str):
+                            # Try to parse JSON string; class_content_flat.json is
+                            # typically an array of post objects.
+                            try:
+                                parsed = json.loads(payload)
+                            except Exception:
+                                parsed = None
+
+                        if isinstance(parsed, list):
+                            # Expand list elements into separate Documents
+                            for item in parsed:
+                                content = item.get("content") or str(item)
+                                doc = langchain_core.documents.Document(
+                                    page_content=content,
+                                    metadata={
+                                        "source": file_path,
+                                        "post_id": item.get("id"),
+                                        "thread_id": item.get("thread_id"),
+                                        "parent_id": item.get("parent_id"),
+                                    },
+                                )
+                                new_documents.append(doc)
+                        elif isinstance(parsed, dict):
+                            content = parsed.get("content") or str(parsed)
+                            doc = langchain_core.documents.Document(
+                                page_content=content,
+                                metadata={
+                                    "source": file_path,
+                                    "post_id": parsed.get("id"),
+                                    "thread_id": parsed.get("thread_id"),
+                                    "parent_id": parsed.get("parent_id"),
+                                },
+                            )
+                            new_documents.append(doc)
+                        else:
+                            # Fallback: keep the Document returned by JSONLoader
+                            new_documents.append(rd)
                 else:
                     continue  # Skip other file types
 

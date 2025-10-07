@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import uuid
 import zipfile
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from textwrap import dedent
 
@@ -96,7 +96,7 @@ def generate_imscc(
         if version.startswith("1.2")
         else "http://ltsc.ieee.org/xsd/imsccv1p3/LOM/manifest"
     )
-    created = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+    created = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     metadata_xml = dedent(
         f"""
         <metadata>

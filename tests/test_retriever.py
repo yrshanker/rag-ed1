@@ -1,10 +1,13 @@
-from pathlib import Path
 import os
+from pathlib import Path
+
 import langchain_core.documents
 from langchain_core.embeddings import Embeddings
-import pytest
 import langchain_openai.embeddings
+import pytest
 import rag_ed.retrievers.vectorstore
+import langchain_community.vectorstores
+from rag_ed.embeddings import PassThroughEmbeddings
 from rag_ed.loaders.canvas import CanvasLoader
 from rag_ed.loaders.piazza import PiazzaLoader
 from rag_ed.retrievers.vectorstore import VectorStoreRetriever
@@ -20,11 +23,7 @@ class DummyEmbeddings(Embeddings):
         return [float(len(text))]
 
 
-def test_vector_store_retriever(monkeypatch, tmp_path: Path) -> None:
-    monkeypatch.setattr(
-        langchain_openai.embeddings, "OpenAIEmbeddings", DummyEmbeddings
-    )
-
+def test_vector_store_retriever(tmp_path: Path) -> None:
     class DummyVectorStore:
         def __init__(self, docs: list) -> None:
             self._docs = docs
@@ -43,7 +42,7 @@ def test_vector_store_retriever(monkeypatch, tmp_path: Path) -> None:
     )
     piazza_path = generate_piazza_export(tmp_path / "piazza_sample.zip")
     docs = CanvasLoader(str(canvas_path)).load() + PiazzaLoader(str(piazza_path)).load()
-    vector_store = DummyVectorStore.from_documents(docs, DummyEmbeddings())
+    vector_store = DummyVectorStore.from_documents(docs, PassThroughEmbeddings())
     retriever = VectorStoreRetriever.__new__(VectorStoreRetriever)
     object.__setattr__(retriever, "vector_store", vector_store)
     object.__setattr__(retriever, "k", 1)
@@ -250,3 +249,26 @@ def test_vector_store_retriever_missing_files() -> None:
         match="Canvas file 'missing.imscc' does not exist.",
     ):
         VectorStoreRetriever("missing.imscc", "missing.zip")
+
+
+def test_passthrough_embeddings_retrieve(monkeypatch, tmp_path: Path) -> None:
+    """In-memory retrieval works with :class:`PassThroughEmbeddings`."""
+
+    monkeypatch.setattr(
+        rag_ed.retrievers.vectorstore.langchain.vectorstores,
+        "InMemoryVectorStore",
+        langchain_community.vectorstores.InMemoryVectorStore,
+        raising=False,
+    )
+    canvas_path = generate_imscc(tmp_path / "canvas.imscc")
+    piazza_path = generate_piazza_export(tmp_path / "piazza.zip")
+    retriever = VectorStoreRetriever(
+        str(canvas_path),
+        str(piazza_path),
+        vector_store_type="in_memory",
+        embeddings=PassThroughEmbeddings(),
+    )
+    piazza_docs = retriever.retrieve("Piazza", k=3)
+    assert any("Hello from Piazza" in doc.page_content for doc in piazza_docs)
+    canvas_docs = retriever.retrieve("minimal", k=3)
+    assert any("Minimal CC Example" in doc.page_content for doc in canvas_docs)

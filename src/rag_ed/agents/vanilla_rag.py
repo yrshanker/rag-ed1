@@ -17,11 +17,13 @@ performing retrieval.
 
 import argparse
 
+import langchain_core.embeddings
 from langchain.chains import RetrievalQA
 from langchain_community.llms import OpenAI  # Updated per deprecation notice
 from langchain_core.language_models.llms import LLM
 from typing import Any, List, Optional
 
+from rag_ed.embeddings import PassThroughEmbeddings
 from rag_ed.retrievers.vectorstore import VectorStoreRetriever
 
 
@@ -47,7 +49,13 @@ class EchoLLM(LLM):
 
 
 def one_step_retrieval(
-    query: str, *, canvas_path: str, piazza_path: str, echo: bool = False
+    query: str,
+    *,
+    canvas_path: str,
+    piazza_path: str,
+    pass_through: bool = False,
+    echo: bool = False,
+    embeddings: langchain_core.embeddings.Embeddings | None = None,
 ) -> str:
     """Answer ``query`` using a single retrieval step.
 
@@ -59,16 +67,33 @@ def one_step_retrieval(
         Path to a Canvas ``.imscc`` export.
     piazza_path:
         Path to a Piazza ``.zip`` export.
+    pass_through:
+        If ``True``, return retrieved documents directly instead of calling an
+        LLM.
+    embeddings:
+        Optional embedding model. Defaults to
+        :class:`langchain_openai.embeddings.OpenAIEmbeddings`.
 
     Returns
     -------
     str
-        The answer returned by the language model.
+        The answer returned by the language model or concatenated documents
+        when ``pass_through`` is ``True``.
     """
 
+    # Default to pass-through embeddings for offline modes to avoid network calls.
+    if embeddings is None and (pass_through or echo):
+        embeddings = PassThroughEmbeddings()
+
     retriever = VectorStoreRetriever(
-        canvas_path=canvas_path, piazza_path=piazza_path, vector_store_type="in_memory"
+        canvas_path=canvas_path,
+        piazza_path=piazza_path,
+        vector_store_type="in_memory",
+        embeddings=embeddings,
     )
+    if pass_through:
+        docs = retriever.retrieve(query)
+        return "\n".join(doc.page_content for doc in docs)
     llm = EchoLLM() if echo else OpenAI(temperature=0.7, model_name="gpt-4o-mini")
     # Pass the retriever itself (a BaseRetriever) rather than the underlying
     # raw vector store so LangChain's type validation succeeds. The previous
@@ -105,6 +130,11 @@ def main() -> None:
         choices=["vanilla", "self_querying", "self_querying_retriever", "graph"],
         default="vanilla",
         help="Type of agent to run",
+    )
+    parser.add_argument(
+        "--pass-through",
+        action="store_true",
+        help="Return retrieved documents without calling the LLM.",
     )
     parser.add_argument(
         "--graph-allowed-kinds",
@@ -164,11 +194,14 @@ def main() -> None:
     if args.agent_type == "vanilla":
         # Build retrieval backend based on --retrieval-mode
         if args.retrieval_mode == "vector":
+            embeddings = PassThroughEmbeddings() if (args.pass_through or echo_mode) else None
             answer = one_step_retrieval(
                 args.query,
                 canvas_path=args.canvas,
                 piazza_path=args.piazza,
+                pass_through=args.pass_through,
                 echo=echo_mode,
+                embeddings=embeddings,
             )
         elif args.retrieval_mode in {"graph", "fused"}:
             from rag_ed.graphs import CourseGraph

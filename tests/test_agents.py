@@ -1,10 +1,16 @@
 """Tests for agent modules."""
 
 import types
+from pathlib import Path
 
 import langchain_core.documents
 
 from rag_ed.agents import self_querying, vanilla_rag
+from rag_ed.embeddings import PassThroughEmbeddings
+from tests.imscc_utils import generate_imscc
+from tests.piazza_utils import generate_piazza_export
+import rag_ed.retrievers.vectorstore
+import langchain_community.vectorstores
 
 
 def test_one_step_retrieval(monkeypatch) -> None:
@@ -63,3 +69,31 @@ def test_run_agent_decomposes_queries(monkeypatch) -> None:
     assert dummy.queries == ["first part", "second part"]
     assert "result for first part" in result
     assert "result for second part" in result
+
+
+def test_one_step_retrieval_pass_through(monkeypatch, tmp_path: Path) -> None:
+    """``pass_through`` returns documents without invoking an LLM."""
+
+    class DummyOpenAI:
+        def __init__(self, *args, **kwargs) -> None:  # noqa: D401
+            raise AssertionError("LLM should not be called")
+
+    monkeypatch.setattr(vanilla_rag, "OpenAI", DummyOpenAI)
+    monkeypatch.setattr(
+        rag_ed.retrievers.vectorstore.langchain.vectorstores,
+        "InMemoryVectorStore",
+        langchain_community.vectorstores.InMemoryVectorStore,
+        raising=False,
+    )
+    canvas_path = generate_imscc(tmp_path / "c.imscc")
+    piazza_path = generate_piazza_export(tmp_path / "p.zip")
+
+    result = vanilla_rag.one_step_retrieval(
+        "Piazza",
+        canvas_path=str(canvas_path),
+        piazza_path=str(piazza_path),
+        pass_through=True,
+        embeddings=PassThroughEmbeddings(),
+    )
+
+    assert "Hello from Piazza" in result

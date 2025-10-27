@@ -23,6 +23,7 @@ dependencies = [
     "smolagents",
     "langchain-openai",
     "networkx",
+    "piazza-api",
 ]
 
 [project.optional-dependencies]

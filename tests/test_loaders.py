@@ -1,14 +1,17 @@
 from pathlib import Path
 import datetime
 import time
+from typing import Iterable
 
 import pytest
 
 from rag_ed.loaders.canvas import CanvasLoader
 from rag_ed.loaders.canvas_api import CanvasAPILoader
 from rag_ed.loaders.piazza import PiazzaLoader
+from rag_ed.loaders.piazza_api import PiazzaAPILoader
 from tests.imscc_utils import generate_imscc
 from tests.piazza_utils import generate_piazza_export
+from rag_ed.loaders.utils import extract_zip
 
 
 def test_canvas_loader_returns_document(tmp_path: Path) -> None:
@@ -153,6 +156,15 @@ def test_canvas_api_loader_respects_rate_limits(
     assert called == [1]
 
 
+def test_extract_zip_lists_files(tmp_path: Path) -> None:
+    canvas = generate_imscc(tmp_path / "course.imscc")
+    piazza = generate_piazza_export(tmp_path / "piazza.zip")
+    canvas_files = extract_zip(str(canvas))
+    piazza_files = extract_zip(str(piazza))
+    assert any(p.endswith("imsmanifest.xml") for p in canvas_files)
+    assert any(p.endswith("config.json") for p in piazza_files)
+
+
 def test_piazza_loader_returns_document(tmp_path: Path) -> None:
     path = generate_piazza_export(tmp_path / "piazza_sample.zip")
     docs = PiazzaLoader(str(path)).load()
@@ -171,3 +183,52 @@ def test_piazza_loader_missing_file() -> None:
         match="Piazza file 'does_not_exist.zip' does not exist or is not a file.",
     ):
         PiazzaLoader("does_not_exist.zip")
+
+
+def test_piazza_api_loader_fetches_posts(monkeypatch: pytest.MonkeyPatch) -> None:
+    posts = [
+        {
+            "id": "p1",
+            "nr": 1,
+            "history": [
+                {
+                    "subject": "Hello",
+                    "content": "<p>World</p>",
+                    "created": "2024-01-01T00:00:00Z",
+                }
+            ],
+        },
+        {
+            "id": "p2",
+            "nr": 2,
+            "history": [
+                {
+                    "subject": "Another",
+                    "content": "<p>Post</p>",
+                    "created": "2024-01-02T00:00:00Z",
+                }
+            ],
+        },
+    ]
+
+    class FakeNetwork:
+        def iter_all_posts(self) -> Iterable[dict[str, object]]:
+            return iter(posts)
+
+    class FakePiazza:
+        def user_login(self, *, email: str, password: str) -> None:
+            assert email == "e"
+            assert password == "p"
+
+        def network(self, network_id: str) -> FakeNetwork:
+            assert network_id == "nid"
+            return FakeNetwork()
+
+    monkeypatch.setattr("rag_ed.loaders.piazza_api.Piazza", FakePiazza)
+
+    loader = PiazzaAPILoader("nid", email="e", password="p")
+    docs = loader.load()
+
+    assert len(docs) == 2
+    assert docs[0].metadata["source"] == "https://piazza.com/class/nid/post/1"
+    assert "Hello" in docs[0].page_content

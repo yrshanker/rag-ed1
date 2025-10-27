@@ -1,6 +1,4 @@
-"""
-This file contains the PiazzaLoader class, which is responsible for loading files from Piazza
-"""
+"""Piazza course loader."""
 
 import datetime
 import os
@@ -10,6 +8,8 @@ import langchain_community.document_loaders
 import langchain_core.document_loaders
 import langchain_core.documents
 import tqdm
+
+from .utils import extract_zip
 
 
 class PiazzaLoader(langchain_core.document_loaders.BaseLoader):
@@ -23,13 +23,12 @@ class PiazzaLoader(langchain_core.document_loaders.BaseLoader):
     """
 
     def __init__(self, file_path: str) -> None:
-        """
-        Initialize PiazzaLoader.
+        """Create a loader for ``file_path``.
 
         Parameters
         ----------
-        file_path : str
-            Path to the zipped Piazza file.
+        file_path:
+            Path to the Piazza ``.zip`` export.
         """
         path = Path(file_path)
         if not path.is_file():
@@ -39,6 +38,9 @@ class PiazzaLoader(langchain_core.document_loaders.BaseLoader):
         self.course = path.stem
 
     def load(self) -> list[langchain_core.documents.Document]:
+        """Load all documents from the archive."""
+        file_paths = extract_zip(self.zipped_file_path)
+        return self._load_files(file_paths)
         """
         Load all files from the zipped Piazza export.
 

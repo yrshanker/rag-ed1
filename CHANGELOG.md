@@ -4,7 +4,8 @@
 ### Added
 - Expanded README with detailed usage instructions and CI badge.
 - Milestone 7: Gradio UI scaffold (`rag_ed.ui.app`) with retrieval mode controls (vector/graph/fused), edge weighting & fusion parameter inputs, and diagnostics API (per-document vector vs graph score components).
- 
+- Piazza API loader using the unofficial `piazza-api` library.
+
 ### Future Implementation (Planned)
 - Migrate vector store imports to `langchain_community.vectorstores` (remove FAISS/Chroma deprecation warnings).
 - Add Canvas `module_order` edges once metadata is available.
@@ -13,11 +14,11 @@
 - Echo mode UX improvements (`ECHO:` prefix, optional context display).
 - Multi-retriever fusion (graph + vector) with deterministic ranking heuristic.
 - Structured edge statistics export (JSON) and zero-warning CI target.
- - Parse real Canvas `imsmanifest.xml` to populate `module_id` / `module_index` metadata.
- - Build a combined (Canvas + Piazza) unified graph for `--agent-type graph` instead of placeholder.
- - Complete vectorstore import migration (FAISS/Chroma) to silence remaining LangChain deprecations.
- - Document new `--graph-allowed-kinds` flag usage in README.
- - Milestone 8 (Planned): Real combined graph population, module metadata parsing, diagnostics enrichment (edge provenance, normalized similarity), UI/CLI smoke tests, zero deprecation warnings.
+- Parse real Canvas `imsmanifest.xml` to populate `module_id` / `module_index` metadata.
+- Build a combined (Canvas + Piazza) unified graph for `--agent-type graph` instead of placeholder.
+- Complete vectorstore import migration (FAISS/Chroma) to silence remaining LangChain deprecations.
+- Document new `--graph-allowed-kinds` flag usage in README.
+- Milestone 8 (Planned): Real combined graph population, module metadata parsing, diagnostics enrichment (edge provenance, normalized similarity), UI/CLI smoke tests, zero deprecation warnings.
 
 ## [0.1.1] - 2025-08-26
 ### Removed

@@ -1,6 +1,4 @@
-"""
-This file contains the CanvasLoader class, which is responsible for loading files from Canvas
-"""
+"""Canvas course loader."""
 
 import datetime
 import os
@@ -19,6 +17,8 @@ from langchain_community.document_loaders import (
 from langchain_core.document_loaders import BaseLoader
 from langchain_core.documents import Document
 import tqdm
+
+from .utils import extract_zip
 
 
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".bmp"}
@@ -67,32 +67,9 @@ class CanvasLoader(BaseLoader):
         self.course = path.stem
 
     def load(self) -> list[Document]:
-        """
-        Load all files from the zipped .imscc file.
-
-        Returns
-        -------
-        list of Document
-            List of loaded documents.
-
-        Examples
-        --------
-        >>> loader = CanvasLoader('course.imscc')
-        >>> docs = loader.load()
-        >>> print(len(docs))
-        """
-        from rag_ed.loaders.utils import extract_zip_to_temp
-
-        def process(temp_dir: str) -> list[Document]:
-            file_paths = []
-            for root, _, files in tqdm.tqdm(os.walk(temp_dir)):
-                for file in files:
-                    file_paths.append(os.path.join(root, file))
-            return self._load_files(file_paths)
-
-        return extract_zip_to_temp(self.zipped_file_path, process)
-
-    # _unzip_imscc_file is no longer needed; all processing is done in load()
+        """Load all documents from the archive."""
+        file_paths = extract_zip(self.zipped_file_path)
+        return self._load_files(file_paths)
 
     def _load_files(self, list_of_files_to_load: list[str]) -> list[Document]:
         """

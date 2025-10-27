@@ -75,6 +75,10 @@ class GraphRetriever(langchain_core.retrievers.BaseRetriever):
         if artifact_id not in self._graph.graph:
             raise KeyError(f"Artifact ID '{artifact_id}' not found in graph.")
         depth = max_depth if max_depth is not None else self._max_depth
+        if depth < 0:
+            msg = "max_depth must be non-negative"
+            raise ValueError(msg)
+
         visited = {artifact_id}
         results: list[tuple[float, str]] = []  # (score, node_id)
         queue: deque[tuple[str, int]] = deque([(artifact_id, 0)])

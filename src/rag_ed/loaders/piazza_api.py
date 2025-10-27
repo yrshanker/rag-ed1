@@ -7,7 +7,16 @@ from typing import Any, Dict, Iterable, List, Optional
 
 from langchain_core.document_loaders import BaseLoader
 from langchain_core.documents import Document
-from piazza_api import Piazza
+
+# Optional dependency: the real piazza_api package may not be installed in dev/test.
+# Expose a Piazza symbol for tests to monkeypatch while avoiding import-time failure.
+try:  # pragma: no cover - exercised via tests with monkeypatch
+    from piazza_api import Piazza as _RealPiazza  # type: ignore
+except Exception:  # pragma: no cover - absence of dependency
+    _RealPiazza = None  # type: ignore
+
+# Export name used throughout this module; tests monkeypatch rag_ed.loaders.piazza_api.Piazza
+Piazza = _RealPiazza  # type: ignore
 
 
 class PiazzaAPILoader(BaseLoader):
@@ -32,6 +41,10 @@ class PiazzaAPILoader(BaseLoader):
 
     def load(self) -> List[Document]:  # type: ignore[override]
         """Fetch all posts visible to the authenticated user."""
+        if Piazza is None:
+            raise ImportError(
+                "piazza_api is required for PiazzaAPILoader; install 'piazza-api' or monkeypatch Piazza in tests."
+            )
         piazza = Piazza()
         piazza.user_login(email=self.email, password=self.password)
         network = piazza.network(self.network_id)

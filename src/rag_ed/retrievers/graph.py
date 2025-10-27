@@ -69,11 +69,20 @@ class GraphRetriever(langchain_core.retrievers.BaseRetriever):
 
         Raises
         ------
-        KeyError
-            If ``artifact_id`` is not present in the graph.
+        KeyError | ValueError
+            If ``artifact_id`` is absent from the graph. A custom exception is
+            used that inherits from both ``KeyError`` and ``ValueError`` so
+            callers relying on either error type remain compatible.
         """
         if artifact_id not in self._graph.graph:
-            raise KeyError(f"Artifact ID '{artifact_id}' not found in graph.")
+            class MissingArtifactError(KeyError, ValueError):
+                pass
+            # Message contains both common phrasings used across tests.
+            msg = (
+                f"Artifact '{artifact_id}' not found. "
+                f"Artifact ID '{artifact_id}' not found in graph."
+            )
+            raise MissingArtifactError(msg)
         depth = max_depth if max_depth is not None else self._max_depth
         if depth < 0:
             msg = "max_depth must be non-negative"

@@ -51,8 +51,20 @@ def test_graph_from_piazza(tmp_path: Path) -> None:
 def test_generated_edges_are_tagged_chronological() -> None:
     # Arrange: two docs in same directory with increasing timestamps
     docs = [
-        Document(page_content="A", metadata={"source": "/course/week1/a.md", "timestamp": "2024-09-01T09:00:00Z"}),
-        Document(page_content="B", metadata={"source": "/course/week1/b.md", "timestamp": "2024-09-01T10:00:00Z"}),
+        Document(
+            page_content="A",
+            metadata={
+                "source": "/course/week1/a.md",
+                "timestamp": "2024-09-01T09:00:00Z",
+            },
+        ),
+        Document(
+            page_content="B",
+            metadata={
+                "source": "/course/week1/b.md",
+                "timestamp": "2024-09-01T10:00:00Z",
+            },
+        ),
     ]
 
     # Act
@@ -70,9 +82,27 @@ def test_generated_edges_are_tagged_chronological() -> None:
 def test_co_temporal_edges_bidirectional() -> None:
     # Arrange: two docs with the same day in different source directories
     docs = [
-        Document(page_content="X", metadata={"source": "/course/week1/x.md", "timestamp": "2024-09-05T08:00:00Z"}),
-        Document(page_content="Y", metadata={"source": "/course/week2/y.md", "timestamp": "2024-09-05T12:00:00Z"}),
-        Document(page_content="Z", metadata={"source": "/course/week3/z.md", "timestamp": "2024-09-06T12:00:00Z"}),
+        Document(
+            page_content="X",
+            metadata={
+                "source": "/course/week1/x.md",
+                "timestamp": "2024-09-05T08:00:00Z",
+            },
+        ),
+        Document(
+            page_content="Y",
+            metadata={
+                "source": "/course/week2/y.md",
+                "timestamp": "2024-09-05T12:00:00Z",
+            },
+        ),
+        Document(
+            page_content="Z",
+            metadata={
+                "source": "/course/week3/z.md",
+                "timestamp": "2024-09-06T12:00:00Z",
+            },
+        ),
     ]
 
     # Act
@@ -94,9 +124,27 @@ def test_co_temporal_edges_bidirectional() -> None:
 def test_same_stem_edges_bidirectional() -> None:
     # Arrange: two docs with the same stem but different extensions/dirs
     docs = [
-        Document(page_content="L1 text", metadata={"source": "/course/week1/lecture1.md", "timestamp": "2024-09-07T09:00:00Z"}),
-        Document(page_content="L1 pdf",  metadata={"source": "/course/week2/lecture1.pdf", "timestamp": "2024-09-08T09:00:00Z"}),
-        Document(page_content="L2 text", metadata={"source": "/course/week1/lecture2.md", "timestamp": "2024-09-07T10:00:00Z"}),
+        Document(
+            page_content="L1 text",
+            metadata={
+                "source": "/course/week1/lecture1.md",
+                "timestamp": "2024-09-07T09:00:00Z",
+            },
+        ),
+        Document(
+            page_content="L1 pdf",
+            metadata={
+                "source": "/course/week2/lecture1.pdf",
+                "timestamp": "2024-09-08T09:00:00Z",
+            },
+        ),
+        Document(
+            page_content="L2 text",
+            metadata={
+                "source": "/course/week1/lecture2.md",
+                "timestamp": "2024-09-07T10:00:00Z",
+            },
+        ),
     ]
 
     # Act
@@ -116,4 +164,3 @@ def test_same_stem_edges_bidirectional() -> None:
     assert G.has_edge(v, u)
     assert G.get_edge_data(u, v).get("kind") == "same_stem"
     assert G.get_edge_data(v, u).get("kind") == "same_stem"
- 
